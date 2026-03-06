@@ -1,0 +1,1224 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gamify Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700&family=Sora:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        :root {
+            --bg-1:#0a0f23; --bg-2:#2a2166; --panel:rgba(14,20,44,.78);
+            --panel-soft:rgba(255,255,255,.08); --border:rgba(255,255,255,.14);
+            --text:#eef2ff; --muted:#b7c0ef; --gold:#ffd166; --ok:#54d38c; --danger:#ff7d8a;
+        }
+        *{box-sizing:border-box}
+        body{margin:0;color:var(--text);font-family:"Sora",sans-serif;
+            background:radial-gradient(circle at 10% 10%,rgba(98,227,255,.16),transparent 30%),
+            radial-gradient(circle at 90% 20%,rgba(255,122,135,.14),transparent 28%),
+            linear-gradient(145deg,var(--bg-1),var(--bg-2));min-height:100vh}
+        body.theme-light{
+            --bg-1:#f5f8ff; --bg-2:#dce8ff; --panel:rgba(255,255,255,.82);
+            --panel-soft:rgba(31,58,120,.08); --border:rgba(31,58,120,.2);
+            --text:#142448; --muted:#415b8b;
+        }
+        body.theme-light .sidebar{
+            background:rgba(13, 23, 52, .96);
+            border-right:1px solid rgba(255,255,255,.14);
+        }
+        body.theme-light .brand{
+            color:#e8efff;
+        }
+        body.theme-light .nav-btn{
+            color:#e8efff;
+            background:rgba(255,255,255,.08);
+            border:1px solid rgba(255,255,255,.18);
+        }
+        body.theme-light .nav-btn.active{
+            color:#ffffff;
+        }
+        body.theme-light .badge{
+            background:rgba(255,255,255,.88);
+            color:#142448;
+            border:1px solid rgba(31,58,120,.22);
+            opacity:1;
+        }
+        body.theme-light .badge .xp{
+            color:#415b8b;
+        }
+        body.theme-light .leaderboard-item{
+            background:rgba(255,255,255,.82);
+            color:#142448;
+            border-color:rgba(31,58,120,.2);
+        }
+        body.theme-dark{
+            --bg-1:#070b1d; --bg-2:#171f40; --panel:rgba(10,15,36,.88);
+            --panel-soft:rgba(255,255,255,.08); --border:rgba(255,255,255,.14);
+            --text:#eef2ff; --muted:#b7c0ef;
+        }
+        body.theme-colorful{
+            --bg-1:#1d1450; --bg-2:#0f4b5a; --panel:rgba(24,20,70,.78);
+            --panel-soft:rgba(255,255,255,.1); --border:rgba(255,255,255,.18);
+            --text:#eefbff; --muted:#c8ddff;
+        }
+        .layout{display:grid;grid-template-columns:280px 1fr;min-height:100vh}
+        .sidebar{background:rgba(8,12,30,.95);border-right:1px solid var(--border);padding:22px;display:flex;flex-direction:column;gap:12px}
+        .brand{font-family:"Orbitron",sans-serif;font-size:1.7rem;margin:6px 0 14px}
+        .nav-btn{border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.08);color:var(--text);border-radius:12px;padding:11px 12px;text-align:left;cursor:pointer;transition:.2s;font-weight:600}
+        .nav-btn:hover{transform:translateX(3px)}
+        .nav-btn.active{background:linear-gradient(135deg,rgba(113,120,255,.72),rgba(155,94,255,.72));box-shadow:0 8px 20px rgba(84,98,255,.3)}
+        .guided-target{position:relative;z-index:1100;box-shadow:0 0 0 2px rgba(255,255,255,.9),0 0 24px rgba(255,209,102,.8)}
+        .main{padding:24px;position:relative}
+        .section{display:none;animation:fadeIn .26s ease}.section.active{display:block}
+        .section-guided{position:relative;z-index:1100;box-shadow:0 0 0 2px rgba(255,255,255,.65);border-radius:14px}
+        .section-title{font-family:"Orbitron",sans-serif;margin:0 0 16px}
+        .card{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:14px;backdrop-filter:blur(8px)}
+        .profile-hero{display:grid;grid-template-columns:100px 1fr;gap:14px;align-items:center}
+        .avatar{width:90px;height:90px;border-radius:50%;overflow:hidden;background:linear-gradient(140deg,#6aa9ff,#9c6fff);border:2px solid rgba(255,255,255,.45);display:flex;align-items:center;justify-content:center;font-size:1.7rem;font-weight:700}
+        .avatar img{width:100%;height:100%;object-fit:cover}
+        .profile-meta{color:var(--muted);font-size:.9rem;display:flex;gap:12px;flex-wrap:wrap;margin-top:8px}
+        .profile-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+        .profile-actions input{min-width:220px;flex:1;border-radius:8px;border:1px solid var(--border);background:rgba(0,0,0,.28);color:white;padding:9px}
+        .profile-actions select{
+            min-width:170px;
+            border-radius:8px;
+            border:1px solid var(--border);
+            background:rgba(255,255,255,.14);
+            color:var(--text);
+            padding:9px 12px;
+        }
+        .profile-actions select option{
+            color:#111827;
+            background:#ffffff;
+        }
+        #themeMessage{
+            color:var(--text);
+            font-weight:600;
+        }
+        .btn{border:none;border-radius:10px;font-weight:700;padding:9px 12px;cursor:pointer}
+        .btn-primary{background:linear-gradient(135deg,#ffd166,#ff8c42);color:#1c1f42}.btn-secondary{background:rgba(255,255,255,.16);color:white}
+        .stats-grid{display:grid;grid-template-columns:repeat(4,minmax(120px,1fr));gap:10px;margin-top:12px}
+        .stat{background:var(--panel-soft);border:1px solid var(--border);border-radius:12px;padding:10px}
+        .stat .label{color:var(--muted);font-size:.8rem}.stat .value{font-weight:700;margin-top:2px}
+        .progress-track{height:11px;border-radius:999px;background:rgba(255,255,255,.16);overflow:hidden;margin-top:10px}
+        .progress-fill{height:100%;width:0;transition:width .5s ease;background:linear-gradient(90deg,#ffd166,#ff8c42)}
+        .badge-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+        .badge{
+            background:linear-gradient(160deg, rgba(15,21,46,.96), rgba(41,30,74,.9));
+            border:1px solid var(--border);
+            border-radius:14px;
+            padding:12px;
+            text-align:center;
+            opacity:.52;
+            transition:.2s ease;
+        }
+        .badge:hover{transform:translateY(-3px)}
+        .badge.unlocked{
+            opacity:1;
+            border-color:rgba(255,209,102,.95);
+            box-shadow:0 0 22px rgba(255,209,102,.35);
+        }
+        .emblem{
+            width:52px;
+            height:52px;
+            margin:0 auto 6px;
+            border-radius:12px 12px 16px 16px;
+            clip-path:polygon(50% 0%, 92% 20%, 92% 68%, 50% 100%, 8% 68%, 8% 20%);
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            flex-direction:column;
+            gap:2px;
+            font-size:1rem;
+            font-weight:900;
+            color:#fff;
+            border:1px solid rgba(255,255,255,.5);
+            box-shadow:0 0 14px rgba(94,128,255,.45);
+            position:relative;
+            text-shadow:0 1px 2px rgba(0,0,0,.35);
+        }
+        .emblem-stars{letter-spacing:1px;line-height:1;font-size:.88rem}
+        .emblem-rank{
+            font-size:.58rem;
+            font-weight:800;
+            line-height:1;
+            padding:1px 4px;
+            border-radius:999px;
+            background:rgba(0,0,0,.32);
+            border:1px solid rgba(255,255,255,.4);
+        }
+        .emblem::before,
+        .emblem::after{
+            content:"";
+            position:absolute;
+            top:18px;
+            width:13px;
+            height:13px;
+            background:inherit;
+            border:1px solid rgba(255,255,255,.35);
+            box-shadow:0 0 8px rgba(106,132,255,.28);
+        }
+        .emblem::before{
+            left:-9px;
+            transform:skewY(14deg);
+            border-radius:4px 2px 2px 6px;
+        }
+        .emblem::after{
+            right:-9px;
+            transform:skewY(-14deg);
+            border-radius:2px 4px 6px 2px;
+        }
+        .emblem.xs{
+            width:34px;
+            height:34px;
+            font-size:.7rem;
+            margin:0;
+            gap:1px;
+        }
+        .emblem.xs::before,
+        .emblem.xs::after{
+            width:9px;
+            height:9px;
+            top:12px;
+        }
+        .emblem.xs .emblem-stars{font-size:.62rem;letter-spacing:0}
+        .emblem.xs .emblem-rank{display:none}
+        .tier-bronze{background:linear-gradient(145deg,#d49761,#8a5437)}
+        .tier-silver{background:linear-gradient(145deg,#e6ecff,#909fcb);color:#25365d}
+        .tier-gold{background:linear-gradient(145deg,#ffe17b,#ffa84b);color:#352640}
+        .tier-emerald{background:linear-gradient(145deg,#78f5bf,#149f77)}
+        .tier-sapphire{background:linear-gradient(145deg,#78b7ff,#365dcf)}
+        .tier-amethyst{background:linear-gradient(145deg,#d99aff,#7f44d8)}
+        .tier-ruby{background:linear-gradient(145deg,#ff9ca8,#c13559)}
+        .tier-legend{background:linear-gradient(145deg,#ffd8a3,#ff7a45);color:#3c1f27}
+        .badge .name{font-weight:700;line-height:1.2}
+        .badge .xp{color:var(--muted);font-size:.82rem}
+        .course-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+        .course-card{border-radius:16px;overflow:hidden;position:relative;min-height:230px;cursor:pointer;border:1px solid var(--border);background-size:cover;background-position:center;display:flex;align-items:flex-end;transition:.24s}
+        .course-card:hover{transform:translateY(-6px)}
+        .course-layer{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.24),rgba(0,0,0,.82))}
+        .course-info{position:relative;z-index:2;width:100%;padding:12px}
+        .course-meta{display:flex;justify-content:space-between;font-size:.82rem;color:#d9ddff;margin-top:6px;gap:8px}
+        .chip{border:1px solid rgba(255,255,255,.28);border-radius:999px;padding:2px 8px;font-size:.72rem;text-transform:uppercase}
+        .course-progress{margin-top:8px;background:rgba(255,255,255,.2);height:7px;border-radius:99px;overflow:hidden}
+        .course-progress>div{height:100%;background:var(--gold);width:0%}
+        .leaderboard-list{display:grid;gap:8px}
+        .leaderboard-item{display:grid;grid-template-columns:52px minmax(120px,1fr) minmax(100px,1fr) 90px;gap:10px;align-items:center;background:rgba(255,255,255,.08);border:1px solid var(--border);border-radius:12px;padding:9px}
+        .leaderboard-item.current{border-color:rgba(255,209,102,.9);box-shadow:0 0 14px rgba(255,209,102,.3)}
+        .lb-user{display:flex;align-items:center;gap:8px}
+        .rank-medal{
+            width:40px;
+            height:40px;
+            border-radius:50%;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            font-weight:800;
+            color:#fff;
+            border:1px solid rgba(255,255,255,.35);
+            background:linear-gradient(145deg,#5f76bb,#34436f);
+            box-shadow:0 0 10px rgba(147,164,217,.35);
+        }
+        .rank-medal.top1{background:linear-gradient(145deg,#ffd76b,#ff9f4d);color:#2b2441}
+        .rank-medal.top2{background:linear-gradient(145deg,#e4ebff,#99a7d8);color:#27355e}
+        .rank-medal.top3{background:linear-gradient(145deg,#f3bd8a,#c67f47);color:#2d2432}
+        .memory-wrap{display:grid;grid-template-columns:repeat(4,minmax(70px,1fr));gap:8px;margin-top:10px}
+        .memory-card{border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,.1);min-height:72px;display:flex;align-items:center;justify-content:center;font-weight:700;cursor:pointer;user-select:none}
+        .memory-card.revealed,.memory-card.matched{background:rgba(98,227,255,.22)}
+        .status{color:var(--muted);font-size:.88rem;min-height:22px;margin-top:8px}
+        .modal{position:fixed;inset:0;background:rgba(0,0,0,.62);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:1300}
+        .modal-box{width:min(900px,92vw);max-height:90vh;overflow-y:auto;background:linear-gradient(140deg,#1f2857,#3d2b69);border:1px solid rgba(255,255,255,.22);border-radius:18px;padding:18px}
+        .modal-box{color:#eef4ff}
+        .modal-box h2,.modal-box h3{color:#f5f8ff}
+        .modal-box .status{color:#d7e1ff}
+        .modal-box .profile-meta{color:#d8e2ff}
+        .modal-grid{display:grid;grid-template-columns:1.2fr 1fr;gap:12px;margin-top:12px}
+        .panel{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.22);border-radius:12px;padding:12px}
+        .guide-overlay{position:fixed;inset:0;background:rgba(4,6,14,.86);backdrop-filter:blur(5px);z-index:5000;display:none;align-items:center;justify-content:center}
+        .guide-overlay.show{display:flex}
+        .guide-card{width:min(520px,92vw);border-radius:16px;background:linear-gradient(145deg,#1d2554,#3d2864);border:1px solid rgba(255,255,255,.22);padding:16px;position:relative;z-index:5001;display:grid;grid-template-columns:84px 1fr;gap:12px;align-items:center}
+        .mascot{width:74px;height:74px;border-radius:50%;border:2px solid rgba(255,255,255,.55);background:radial-gradient(circle at 30% 30%,#90f2ff,#7f5eff 70%);display:flex;align-items:center;justify-content:center;font-size:1.8rem}
+        .guide-title{margin:0;font-family:"Orbitron",sans-serif;font-size:1.02rem}
+        .guide-msg{margin:4px 0 10px;color:#d8deff;font-size:.9rem}
+        .mascot-fab-wrap{
+            position:fixed;
+            right:18px;
+            bottom:18px;
+            z-index:3200;
+            display:flex;
+            flex-direction:column;
+            align-items:flex-end;
+            gap:8px;
+        }
+        .mascot-fab{
+            width:60px;
+            height:60px;
+            border-radius:50%;
+            border:2px solid rgba(255,255,255,.55);
+            background:radial-gradient(circle at 30% 30%,#90f2ff,#7f5eff 70%);
+            color:white;
+            font-weight:800;
+            cursor:pointer;
+            box-shadow:0 12px 24px rgba(35,47,95,.48);
+            animation:mascotFloat 2.5s ease-in-out infinite;
+        }
+        .mascot-panel{
+            width:min(320px,86vw);
+            border-radius:12px;
+            border:1px solid rgba(255,255,255,.2);
+            background:linear-gradient(145deg,#1d2554,#3d2864);
+            color:#e7eeff;
+            padding:12px;
+            box-shadow:0 16px 34px rgba(0,0,0,.32);
+            display:none;
+        }
+        .mascot-panel.show{display:block}
+        .mascot-panel h4{margin:0 0 8px;font-family:"Orbitron",sans-serif}
+        .mascot-panel p{margin:0 0 10px;color:#d5ddff;font-size:.9rem;line-height:1.35}
+        .mascot-actions{display:flex;gap:8px;flex-wrap:wrap}
+        @keyframes mascotFloat{
+            0%{transform:translateY(0)}
+            50%{transform:translateY(-4px)}
+            100%{transform:translateY(0)}
+        }
+        @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+        @media (max-width:980px){.layout{grid-template-columns:1fr}.sidebar{border-right:none;border-bottom:1px solid var(--border)}.stats-grid{grid-template-columns:repeat(2,minmax(120px,1fr))}.modal-grid{grid-template-columns:1fr}.leaderboard-item{grid-template-columns:52px 1fr}}
+    </style>
+</head>
+<body>
+<div class="layout">
+    <aside class="sidebar">
+        <div class="brand">Gamify</div>
+        <button class="nav-btn active" id="nav-dashboard" onclick="showSection('dashboard', this)">Dashboard</button>
+        <button class="nav-btn" id="nav-courses" onclick="showSection('courses', this)">Courses</button>
+        <button class="nav-btn" id="nav-quiz" onclick="showSection('quiz', this)">Quiz</button>
+        <button class="nav-btn" id="nav-leaderboard" onclick="showSection('leaderboard', this)">Leaderboard</button>
+        <button class="nav-btn" id="nav-badges" onclick="showSection('badges', this)">Badges</button>
+        <button class="nav-btn" onclick="logout()">Logout</button>
+    </aside>
+    <main class="main">
+        <section id="dashboard" class="section active">
+            <h1 class="section-title">Dashboard</h1>
+            <div class="card">
+                <div class="profile-hero">
+                    <div id="profileAvatar" class="avatar">U</div>
+                    <div>
+                        <h2 id="profileName" style="margin:0 0 4px;">Loading...</h2>
+                        <div id="profileTierRow" class="profile-meta" style="margin-top:2px;"></div>
+                        <div id="profileContact" class="profile-meta"></div>
+                        <div class="progress-track"><div id="xpBar" class="progress-fill"></div></div>
+                        <div id="xpText" class="status"></div>
+                    </div>
+                </div>
+                <div class="profile-actions">
+                    <input id="avatarFileInput" type="file" accept="image/*">
+                    <button class="btn btn-secondary" onclick="saveAvatarFromFile()">Save Photo</button>
+                </div>
+                <div class="profile-actions">
+                    <input id="displayNameInput" placeholder="Display name">
+                    <button class="btn btn-secondary" onclick="saveDisplayName()">Save Name</button>
+                    <span id="displayNameMessage" class="status" style="margin:0;min-height:auto;"></span>
+                </div>
+                <div class="profile-actions">
+                    <select id="themeSelect" class="btn btn-secondary" style="padding:9px 12px;">
+                        <option value="light">Light (Default)</option>
+                        <option value="dark">Dark</option>
+                        <option value="colorful">Colorful</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="updateTheme()">Apply Theme</button>
+                    <span id="themeMessage" class="status" style="margin:0;min-height:auto;"></span>
+                </div>
+                <div class="stats-grid" id="statsGrid"></div>
+            </div>
+            <div class="card">
+                <h3 style="margin-top:0;">Earned Badges</h3>
+                <div id="dashboardBadges" class="badge-grid"></div>
+            </div>
+        </section>
+
+        <section id="courses" class="section">
+            <h1 class="section-title">Courses</h1>
+            <div class="card">
+                <h3 style="margin:0;">Your Course Progress</h3>
+                <div class="progress-track">
+                    <div id="courseProgressBar" class="progress-fill"></div>
+                </div>
+                <div id="courseProgressText" class="status"></div>
+            </div>
+            <div id="courseContainer" class="course-grid"></div>
+        </section>
+
+        <section id="quiz" class="section">
+            <h1 class="section-title">Quiz Arena</h1>
+            <div class="card">
+                <h3 id="quizQuestion" style="margin-top:0;">Loading quiz...</h3>
+                <div id="quizOptions"></div>
+                <div class="profile-actions">
+                    <button class="btn btn-primary" onclick="submitQuiz()">Submit Answer</button>
+                    <button class="btn btn-secondary" onclick="loadQuiz()">Next Random Quiz</button>
+                </div>
+                <div id="quizMessage" class="status"></div>
+            </div>
+            <div class="card">
+                <h3 style="margin:0;">Tech Memory Challenge</h3>
+                <p class="status" style="margin-top:0;">Match all pairs before time runs out. First completion of the day awards XP.</p>
+                <div class="profile-actions" style="margin-top:0;">
+                    <select id="memoryDifficulty" class="btn btn-secondary" style="padding:9px 12px;">
+                        <option value="easy">Easy (80s)</option>
+                        <option value="normal" selected>Normal (50s)</option>
+                        <option value="hard">Hard (30s)</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="resetMemoryGame(true)">Start Challenge</button>
+                    <span id="memoryTimer" class="status" style="margin:0;min-height:auto;font-weight:700;">NORMAL | Time left: 50s</span>
+                </div>
+                <div id="memoryBoard" class="memory-wrap"></div>
+                <div id="memoryStatus" class="status"></div>
+            </div>
+        </section>
+
+        <section id="leaderboard" class="section">
+            <h1 class="section-title">Leaderboard</h1>
+            <div class="card">
+                <div id="leaderboardRank" class="status" style="margin-top:0;"></div>
+                <div id="leaderboardList" class="leaderboard-list"></div>
+            </div>
+            <div class="card">
+                <h3 style="margin:0;">Global Weekly Ranking</h3>
+                <div id="globalWeeklyList" class="leaderboard-list" style="margin-top:8px;"></div>
+            </div>
+        </section>
+
+        <section id="badges" class="section">
+            <h1 class="section-title">Your Badges</h1>
+            <div id="badgeContainer" class="badge-grid"></div>
+        </section>
+    </main>
+</div>
+
+<div class="mascot-fab-wrap">
+    <div id="mascotPanel" class="mascot-panel">
+        <h4>Mascot Helper</h4>
+        <p id="mascotTipText">Need help? I can explain this tab.</p>
+        <div class="mascot-actions">
+            <button class="btn btn-primary" onclick="mascotNextTip()">New Tip</button>
+            <button class="btn btn-secondary" onclick="mascotGoTo('quiz')">Quiz Tab</button>
+            <button class="btn btn-secondary" onclick="toggleMascot(false)">Close</button>
+        </div>
+    </div>
+    <button class="mascot-fab" onclick="toggleMascot()">AI</button>
+</div>
+
+<script>
+const API = "http://127.0.0.1:8000";
+const API_AUTH = `${API}/auth`;
+const token = localStorage.getItem("access_token");
+if (!token) window.location.href = "login.html";
+
+const state = {
+    user: null,
+    courses: [],
+    quizzes: [],
+    selectedAnswer: null,
+    currentQuiz: null,
+    lessonPreviews: {},
+    earnedBadges: [],
+    memory: {
+        cards: [],
+        first: null,
+        lock: false,
+        matched: 0,
+        started: false,
+        timeLeft: 50,
+        timerId: null,
+        gameOver: false,
+        difficulty: "normal"
+    }
+};
+
+const ALL_BADGES = [
+    { name: "First Steps", icon: "1", unlock: 25 },
+    { name: "Beginner", icon: "2", unlock: 50 },
+    { name: "Quiz Starter", icon: "3", unlock: 90 },
+    { name: "Course Explorer", icon: "4", unlock: 130 },
+    { name: "Intermediate", icon: "5", unlock: 200 },
+    { name: "Skill Builder", icon: "6", unlock: 280 },
+    { name: "Focused Learner", icon: "7", unlock: 360 },
+    { name: "XP Hunter", icon: "8", unlock: 450 },
+    { name: "Pro", icon: "9", unlock: 500 },
+    { name: "Consistency Champ", icon: "10", unlock: 650 },
+    { name: "Challenge Crusher", icon: "11", unlock: 800 },
+    { name: "Legend Apprentice", icon: "12", unlock: 1000 },
+    { name: "Master", icon: "13", unlock: 1200 },
+    { name: "Elite Coder", icon: "14", unlock: 1500 },
+    { name: "Grandmaster", icon: "15", unlock: 1800 },
+    { name: "Titan", icon: "16", unlock: 2200 },
+    { name: "Mythic", icon: "17", unlock: 2700 },
+    { name: "Immortal", icon: "18", unlock: 3200 }
+];
+
+const EMBLEM_TIERS = [
+    { key: "bronze", min: 0, stars: 1, rank: 1, label: "Bronze" },
+    { key: "silver", min: 200, stars: 2, rank: 2, label: "Silver" },
+    { key: "gold", min: 500, stars: 3, rank: 3, label: "Gold" },
+    { key: "emerald", min: 900, stars: 1, rank: 4, label: "Emerald" },
+    { key: "sapphire", min: 1400, stars: 2, rank: 5, label: "Sapphire" },
+    { key: "amethyst", min: 2000, stars: 3, rank: 6, label: "Amethyst" },
+    { key: "ruby", min: 2800, stars: 2, rank: 7, label: "Ruby" },
+    { key: "legend", min: 3600, stars: 3, rank: 8, label: "Legend" }
+];
+
+const MASCOT_TIPS = {
+    dashboard: [
+        "Your XP bar and streak are your daily momentum indicators.",
+        "Upload a profile image to personalize your account.",
+        "Earned badges appear here first as your highlight reel."
+    ],
+    courses: [
+        "Open a course card to preview lessons, XP, and requirements.",
+        "Enroll first, then pass the gate quiz to start learning.",
+        "Check your overall course progress bar at the top."
+    ],
+    quiz: [
+        "Solve quizzes for quick XP gains and leaderboard push.",
+        "Memory Challenge has timed difficulty modes for extra pressure.",
+        "Use Next Random Quiz to keep grinding points."
+    ],
+    leaderboard: [
+        "Top players have rank-medals with number inside.",
+        "Your row is highlighted when present in top list.",
+        "Higher XP means higher placement."
+    ],
+    badges: [
+        "Badges unlock at milestone XP thresholds.",
+        "Glowing cards are already unlocked.",
+        "Push XP consistently to collect all tiers."
+    ]
+};
+
+function authHeaders(extra = {}) { return { Authorization: `Bearer ${token}`, ...extra }; }
+function userInitial() { return state.user && state.user.email ? state.user.email[0].toUpperCase() : "U"; }
+function currentDateKey() { const d = new Date(); return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`; }
+function getDisplayName() {
+    if (!state.user) return "User";
+    const saved = localStorage.getItem(`display_name_${state.user.id}`);
+    if (saved && saved.trim()) return saved.trim();
+    return state.user.email;
+}
+function getTabFromQuery() {
+    const tab = new URLSearchParams(window.location.search).get("tab");
+    const validTabs = ["dashboard", "courses", "quiz", "leaderboard", "badges"];
+    return validTabs.includes(tab) ? tab : "dashboard";
+}
+async function init() {
+    try {
+        const meRes = await fetch(`${API_AUTH}/me`, { headers: authHeaders() });
+        if (!meRes.ok) return logout();
+        state.user = await meRes.json();
+
+        await Promise.all([loadCourses(), loadAllQuizzes(), loadEarnedBadges(), loadLeaderboard()]);
+        applyTheme(state.user.theme || "light");
+        renderUserProfile();
+        renderBadges();
+        renderDashboardBadges();
+        resetMemoryGame(false);
+
+        const initialTab = getTabFromQuery();
+        if (initialTab !== "dashboard") {
+            const navBtn = document.getElementById(`nav-${initialTab}`);
+            if (navBtn) showSection(initialTab, navBtn);
+        }
+
+    } catch {
+        logout();
+    }
+}
+
+function saveAvatarFromFile() {
+    const input = document.getElementById("avatarFileInput");
+    if (!input || !input.files || !input.files[0]) return;
+
+    const file = input.files[0];
+    if (!file.type.startsWith("image/")) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+        localStorage.setItem(`avatar_${state.user.id}`, String(reader.result));
+        renderAvatar();
+    };
+    reader.readAsDataURL(file);
+}
+
+function renderAvatar() {
+    const holder = document.getElementById("profileAvatar");
+    const saved = localStorage.getItem(`avatar_${state.user.id}`);
+    if (saved) {
+        holder.innerHTML = `<img src="${saved}" alt="avatar" onerror="this.parentElement.innerText='${userInitial()}'">`;
+    } else {
+        holder.textContent = userInitial();
+    }
+}
+
+function renderUserProfile() {
+    const user = state.user;
+    if (!user) return;
+
+    document.getElementById("profileName").innerText = getDisplayName();
+    const currentTier = getTierForXP(user.xp);
+    document.getElementById("profileTierRow").innerHTML =
+        `${renderEmblemByXP(user.xp)}<span>${currentTier.label} Tier</span>`;
+    document.getElementById("profileContact").innerHTML =
+        `<span>Email: ${user.email}</span><span>Phone: ${user.phone || "Not set"}</span><span>Level: ${user.level}</span><span>Theme: ${user.theme}</span>`;
+    const themeSelect = document.getElementById("themeSelect");
+    if (themeSelect) themeSelect.value = user.theme || "light";
+    const displayNameInput = document.getElementById("displayNameInput");
+    if (displayNameInput) displayNameInput.value = getDisplayName();
+
+    const progress = Math.min(100, Math.round((user.xp / user.max_xp) * 100));
+    document.getElementById("xpBar").style.width = `${progress}%`;
+    document.getElementById("xpText").innerText = `${user.xp} / ${user.max_xp} XP`;
+
+    renderAvatar();
+
+    const enrolledCount = state.courses.filter(c => c.enrolled).length;
+    const completedCount = state.courses.filter(c => Number(c.progress || 0) >= 100).length;
+
+    document.getElementById("statsGrid").innerHTML = `
+        <div class="stat"><div class="label">Streak</div><div class="value">${user.streak} days</div></div>
+        <div class="stat"><div class="label">Enrolled</div><div class="value">${enrolledCount}</div></div>
+        <div class="stat"><div class="label">Completed</div><div class="value">${completedCount}</div></div>
+        <div class="stat"><div class="label">Total XP</div><div class="value">${user.xp}</div></div>
+    `;
+}
+
+function showSection(id, button) {
+    document.querySelectorAll(".section").forEach(sec => sec.classList.remove("active", "section-guided"));
+    document.getElementById(id).classList.add("active");
+
+    document.querySelectorAll(".nav-btn").forEach(btn => btn.classList.remove("active", "guided-target"));
+    if (button) button.classList.add("active");
+
+    if (id === "courses") loadCourses();
+    if (id === "quiz") loadQuiz();
+    if (id === "badges") renderBadges();
+    if (id === "leaderboard") loadLeaderboard();
+
+    mascotNextTip(id);
+
+}
+
+function applyTheme(theme) {
+    document.body.classList.remove("theme-light", "theme-dark", "theme-colorful");
+    if (theme === "dark") document.body.classList.add("theme-dark");
+    else if (theme === "colorful") document.body.classList.add("theme-colorful");
+    else document.body.classList.add("theme-light");
+}
+
+function saveDisplayName() {
+    if (!state.user) return;
+    const input = document.getElementById("displayNameInput");
+    const msg = document.getElementById("displayNameMessage");
+    if (!input || !msg) return;
+
+    const value = input.value.trim();
+    if (value.length < 2 || value.length > 30) {
+        msg.innerText = "Name must be 2-30 characters";
+        return;
+    }
+
+    localStorage.setItem(`display_name_${state.user.id}`, value);
+    msg.innerText = "Name updated";
+    renderUserProfile();
+    loadLeaderboard();
+}
+
+async function updateTheme() {
+    const selected = document.getElementById("themeSelect").value;
+    const msg = document.getElementById("themeMessage");
+
+    applyTheme(selected);
+
+    const res = await fetch(`${API_AUTH}/update-theme`, {
+        method: "PUT",
+        headers: authHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ theme: selected })
+    });
+
+    if (!res.ok) {
+        msg.innerText = "Theme save failed";
+        return;
+    }
+
+    state.user.theme = selected;
+    msg.innerText = "Theme updated";
+    renderUserProfile();
+}
+
+function complexityToLessonDiff(complexity, index, total) {
+    const c = String(complexity || "beginner").toLowerCase();
+    if (c.includes("adv") || c.includes("hard")) return index < 1 ? "medium" : "hard";
+    if (c.includes("inter")) return index < 1 ? "easy" : "medium";
+    return index < total - 1 ? "easy" : "medium";
+}
+
+function xpByDiff(diff) {
+    if (diff === "hard") return 40;
+    if (diff === "medium") return 25;
+    return 15;
+}
+
+function fallbackLessons(course) {
+    const names = ["Introduction", "Core Concepts", "Hands On", "Final Sprint"];
+    return names.map((name, i) => {
+        const diff = complexityToLessonDiff(course.complexity, i, names.length);
+        return {
+            id: `fallback-${course.id}-${i}`,
+            title: `${name}: ${course.title}`,
+            content: `Lesson content for ${course.title}`,
+            difficulty: diff,
+            xp: xpByDiff(diff)
+        };
+    });
+}
+
+async function loadCourses() {
+    const res = await fetch(`${API}/courses/`, { headers: authHeaders() });
+    if (!res.ok) return;
+    state.courses = await res.json();
+    renderCourseProgressSummary();
+
+    document.getElementById("courseContainer").innerHTML = state.courses.map(course => `
+        <div class="course-card" style="background-image:url('${course.bg_image_url || "https://via.placeholder.com/400"}')" onclick="openCoursePreview('${course.id}')">
+            <div class="course-layer"></div>
+            <div class="course-info">
+                <h3 style="margin:0;">${course.title}</h3>
+                <div class="course-meta">
+                    <span>Rating ${course.rating || 0} | Learners ${course.students_count || 0}</span>
+                    <span class="chip">${course.complexity || "beginner"}</span>
+                </div>
+                <div class="course-progress"><div style="width:${Number(course.progress || 0)}%"></div></div>
+            </div>
+        </div>
+    `).join("");
+
+    if (state.user) renderUserProfile();
+}
+
+function renderCourseProgressSummary() {
+    const enrolled = state.courses.filter(c => c.enrolled);
+    const completed = enrolled.filter(c => Number(c.progress || 0) >= 100);
+    const totalProgress = enrolled.reduce((sum, c) => sum + Number(c.progress || 0), 0);
+    const avgProgress = enrolled.length ? Math.round(totalProgress / enrolled.length) : 0;
+
+    const bar = document.getElementById("courseProgressBar");
+    const text = document.getElementById("courseProgressText");
+    if (!bar || !text) return;
+
+    bar.style.width = `${avgProgress}%`;
+    text.innerText = enrolled.length
+        ? `${completed.length}/${enrolled.length} completed | Average progress: ${avgProgress}%`
+        : "You are not enrolled in any course yet.";
+}
+
+async function fetchCourseLessons(courseId) {
+    const res = await fetch(`${API}/courses/${courseId}/lessons`, { headers: authHeaders() });
+    if (!res.ok) return [];
+    const lessons = await res.json();
+    return lessons.map((lesson, idx) => {
+        const course = state.courses.find(c => c.id === courseId) || {};
+        const diff = complexityToLessonDiff(course.complexity, idx, lessons.length);
+        return { ...lesson, difficulty: diff, xp: xpByDiff(diff) };
+    });
+}
+async function openCoursePreview(courseId) {
+    const course = state.courses.find(c => c.id === courseId);
+    if (!course) return;
+
+    const enrolledLessons = course.enrolled ? await fetchCourseLessons(course.id) : [];
+    const lessons = enrolledLessons.length ? enrolledLessons : fallbackLessons(course);
+    state.lessonPreviews[courseId] = lessons;
+    const totalXP = lessons.reduce((sum, l) => sum + l.xp, 0);
+
+    const modal = document.createElement("div");
+    modal.className = "modal";
+    modal.innerHTML = `
+        <div class="modal-box">
+            <h2 style="margin:0;">${course.title}</h2>
+            <p class="status" style="margin:6px 0 0;">${course.description || "No description available"}</p>
+            <div class="profile-meta" style="margin-top:10px;">
+                <span>Duration: ${course.duration_hours || 0} hours</span>
+                <span>Rating: ${course.rating || 0}</span>
+                <span>Complexity: ${course.complexity || "beginner"}</span>
+                <span>Potential Lesson XP: ${totalXP}</span>
+            </div>
+            <div class="modal-grid">
+                <div class="panel">
+                    <h3 style="margin-top:0;">Lesson Roadmap</h3>
+                    ${lessons.map((l, i) => `<div class="status" style="margin:2px 0;">${i + 1}. ${l.title} (${l.difficulty}) +${l.xp} XP</div>`).join("")}
+                </div>
+                <div class="panel">
+                    <h3 style="margin-top:0;">Start Requirements</h3>
+                    <p class="status" style="margin-top:0;">1) Enroll in course if not enrolled.<br>2) Pass a quick quiz gate before starting.</p>
+                    <div class="profile-actions" style="margin-top:8px;">
+                        <button class="btn btn-secondary" onclick="enrollCourse('${course.id}', this)" ${course.enrolled ? "disabled" : ""}>
+                            ${course.enrolled ? "Enrolled" : "Enroll +20 XP"}
+                        </button>
+                        <button class="btn btn-primary" onclick="startCourseWithQuiz('${course.id}')" ${course.enrolled ? "" : "disabled"} id="startBtn-${course.id}">
+                            Start Course
+                        </button>
+                        <button class="btn btn-secondary" onclick="this.closest('.modal').remove()">Close</button>
+                    </div>
+                    <div class="status" id="courseMsg-${course.id}"></div>
+                </div>
+            </div>
+        </div>
+    `;
+    modal.addEventListener("click", (e) => { if (e.target === modal) modal.remove(); });
+    document.body.appendChild(modal);
+}
+
+async function enrollCourse(courseId, button) {
+    const res = await fetch(`${API}/courses/${courseId}/enroll`, { method: "POST", headers: authHeaders() });
+    const data = await res.json();
+    const msg = document.getElementById(`courseMsg-${courseId}`);
+    if (!res.ok) {
+        if (msg) msg.innerText = data.detail || "Enrollment failed.";
+        return;
+    }
+    if (msg) msg.innerText = data.message || "Enrolled.";
+    if (button) button.disabled = true;
+    const startBtn = document.getElementById(`startBtn-${courseId}`);
+    if (startBtn) startBtn.disabled = false;
+    await loadCourses();
+}
+
+async function loadAllQuizzes() {
+    const res = await fetch(`${API}/quiz/`, { headers: authHeaders() });
+    if (!res.ok) return;
+    state.quizzes = await res.json();
+}
+
+function findCourseGateQuiz(courseId) {
+    const forCourse = state.quizzes.filter(q => q.course_id === courseId);
+    return forCourse.length ? forCourse[0] : null;
+}
+
+async function startCourseWithQuiz(courseId) {
+    const course = state.courses.find(c => c.id === courseId);
+    if (!course || !course.enrolled) return;
+
+    const lessons = state.lessonPreviews[courseId] || fallbackLessons(course);
+    localStorage.setItem(`course_lessons_${courseId}`, JSON.stringify(lessons));
+    localStorage.setItem(`course_meta_${courseId}`, JSON.stringify({
+        title: course.title,
+        description: course.description,
+        rating: course.rating,
+        duration_hours: course.duration_hours,
+        complexity: course.complexity
+    }));
+
+    const gateQuiz = findCourseGateQuiz(courseId);
+    if (!gateQuiz) {
+        window.location.href = `course.html?id=${courseId}`;
+        return;
+    }
+    showCourseQuizModal(gateQuiz, courseId);
+}
+
+function showCourseQuizModal(quiz, courseId) {
+    const modal = document.createElement("div");
+    modal.className = "modal";
+    modal.innerHTML = `
+        <div class="modal-box" style="max-width:620px;">
+            <h2 style="margin:0;">Course Quiz Gate</h2>
+            <p class="status" style="margin-top:6px;">Answer correctly to unlock this course.</p>
+            <h3>${quiz.question}</h3>
+            <div id="courseQuizOptions"></div>
+            <div class="profile-actions">
+                <button class="btn btn-primary" onclick="submitCourseGateQuiz('${quiz.id}', '${courseId}')">Submit</button>
+                <button class="btn btn-secondary" onclick="this.closest('.modal').remove()">Cancel</button>
+            </div>
+            <div class="status" id="courseQuizMsg"></div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    const options = Array.isArray(quiz.options) ? quiz.options : [];
+    document.getElementById("courseQuizOptions").innerHTML = options.map((opt, i) => `
+        <label style="display:block; margin-bottom:8px;">
+            <input type="radio" name="courseQuiz" value="${i}"> ${opt}
+        </label>
+    `).join("");
+}
+
+async function submitCourseGateQuiz(quizId, courseId) {
+    const checked = document.querySelector("input[name='courseQuiz']:checked");
+    const msg = document.getElementById("courseQuizMsg");
+    if (!checked) {
+        msg.innerText = "Choose an answer first.";
+        return;
+    }
+    const res = await fetch(`${API}/quiz/submit`, {
+        method: "POST",
+        headers: authHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ quiz_id: quizId, selected_answer: Number(checked.value) })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+        msg.innerText = data.detail || "Unable to verify quiz.";
+        return;
+    }
+    if (!data.correct) {
+        msg.style.color = "var(--danger)";
+        msg.innerText = "Wrong answer. Try again.";
+        return;
+    }
+    msg.style.color = "var(--ok)";
+    msg.innerText = `Correct. +${data.xp_earned} XP. Redirecting...`;
+    state.user.xp = data.new_xp;
+    renderUserProfile();
+    setTimeout(() => { window.location.href = `course.html?id=${courseId}`; }, 500);
+}
+
+async function loadQuiz() {
+    if (!state.quizzes.length) {
+        document.getElementById("quizQuestion").innerText = "No quiz available.";
+        return;
+    }
+    state.currentQuiz = state.quizzes[Math.floor(Math.random() * state.quizzes.length)];
+    state.selectedAnswer = null;
+    document.getElementById("quizQuestion").innerText = state.currentQuiz.question;
+    document.getElementById("quizOptions").innerHTML = (state.currentQuiz.options || []).map((opt, i) => `
+        <label style="display:block; margin-bottom:8px;">
+            <input type="radio" name="quizOption" value="${i}"> ${opt}
+        </label>
+    `).join("");
+    document.querySelectorAll("input[name='quizOption']").forEach(input => {
+        input.addEventListener("change", e => { state.selectedAnswer = Number(e.target.value); });
+    });
+    document.getElementById("quizMessage").innerText = "";
+}
+
+async function submitQuiz() {
+    if (!state.currentQuiz) return;
+    if (state.selectedAnswer === null) {
+        document.getElementById("quizMessage").innerText = "Select an answer.";
+        return;
+    }
+    const res = await fetch(`${API}/quiz/submit`, {
+        method: "POST",
+        headers: authHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ quiz_id: state.currentQuiz.id, selected_answer: state.selectedAnswer })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+        document.getElementById("quizMessage").innerText = data.detail || "Submit failed.";
+        return;
+    }
+    document.getElementById("quizMessage").innerText = data.correct ? `Correct. +${data.xp_earned} XP` : "Wrong answer.";
+    if (data.correct) confetti({ particleCount: 80, spread: 70 });
+    state.user.xp = data.new_xp;
+    renderUserProfile();
+    loadLeaderboard();
+}
+async function loadLeaderboard() {
+    const res = await fetch(`${API}/leaderboard/`, { headers: authHeaders() });
+    if (!res.ok) return;
+
+    const data = await res.json();
+    const users = Array.isArray(data) ? data : (data.top_users || []);
+    const weeklyUsers = Array.isArray(data) ? [] : (data.global_weekly_top || []);
+    const rank = Array.isArray(data)
+        ? users.findIndex(u => u.email && state.user && u.email.toLowerCase() === state.user.email.toLowerCase()) + 1
+        : data.your_rank;
+    const levelLabel = Array.isArray(data) ? "" : ` (Level ${data.level || "-"})`;
+
+    document.getElementById("leaderboardRank").innerText = rank
+        ? `Your level rank${levelLabel}: #${rank}`
+        : `Your level rank${levelLabel}: --`;
+
+    const maxXP = Math.max(...users.map(u => Number(u.xp || 0)), 1);
+    document.getElementById("leaderboardList").innerHTML = users.map((u, i) => {
+        const r = u.rank || i + 1;
+        const width = Math.max(6, Math.round((Number(u.xp || 0) / maxXP) * 100));
+        const current = state.user && u.email && u.email.toLowerCase() === state.user.email.toLowerCase();
+        const label = current ? getDisplayName() : (u.display_name || u.email);
+        const medalClass = r === 1 ? "top1" : (r === 2 ? "top2" : (r === 3 ? "top3" : ""));
+        return `
+            <div class="leaderboard-item ${current ? "current" : ""}">
+                <div class="rank-medal ${medalClass}">${r}</div>
+                <div class="lb-user">${renderEmblemByXP(u.xp, "xs")}<span>${label}</span></div>
+                <div class="course-progress"><div style="width:${width}%"></div></div>
+                <strong>${u.xp} XP</strong>
+            </div>
+        `;
+    }).join("") || `<div class="status">No leaderboard data.</div>`;
+
+    document.getElementById("globalWeeklyList").innerHTML = weeklyUsers.map((u, i) => {
+        const medalClass = u.rank === 1 ? "top1" : (u.rank === 2 ? "top2" : (u.rank === 3 ? "top3" : ""));
+        return `
+            <div class="leaderboard-item">
+                <div class="rank-medal ${medalClass}">${u.rank || i + 1}</div>
+                <div class="lb-user">${renderEmblemByXP(u.xp, "xs")}<span>${u.email}</span></div>
+                <div class="course-progress"><div style="width:${Math.max(8, 100 - i * 8)}%"></div></div>
+                <strong>L${u.level} | ${u.xp} XP</strong>
+            </div>
+        `;
+    }).join("") || `<div class="status">No weekly global data yet.</div>`;
+}
+
+async function loadEarnedBadges() {
+    const res = await fetch(`${API}/profile/badges`, { headers: authHeaders() });
+    if (!res.ok) {
+        state.earnedBadges = [];
+        return;
+    }
+    state.earnedBadges = await res.json();
+}
+
+function unlockedByBackendOrXP(badge) {
+    const fromBackend = state.earnedBadges.some(b => {
+        const n = String(b.badge_name || "").toLowerCase();
+        return n === badge.name.toLowerCase() || Number(b.xp_required) === badge.unlock;
+    });
+    return fromBackend || (state.user && state.user.xp >= badge.unlock);
+}
+
+function getTierForXP(xp) {
+    const value = Number(xp || 0);
+    let tier = EMBLEM_TIERS[0];
+    for (const t of EMBLEM_TIERS) {
+        if (value >= t.min) tier = t;
+    }
+    return tier;
+}
+
+function renderEmblemByXP(xp, size = "") {
+    const tier = getTierForXP(xp);
+    const sizeClass = size ? ` ${size}` : "";
+    const stars = "&#9733;".repeat(Math.max(1, Number(tier.stars || 1)));
+    return `
+        <div class="emblem${sizeClass} tier-${tier.key}" title="${tier.label} Tier">
+            <div class="emblem-stars">${stars}</div>
+            <div class="emblem-rank">R${tier.rank}</div>
+        </div>
+    `;
+}
+
+function renderBadges() {
+    document.getElementById("badgeContainer").innerHTML = ALL_BADGES.map(b => {
+        const unlocked = unlockedByBackendOrXP(b);
+        const badgeXP = unlocked && state.user ? state.user.xp : b.unlock;
+        return `
+            <div class="badge ${unlocked ? "unlocked" : ""}">
+                ${renderEmblemByXP(badgeXP)}
+                <div class="name">${b.name}</div>
+                <div class="xp">${b.unlock} XP</div>
+            </div>
+        `;
+    }).join("");
+}
+
+function renderDashboardBadges() {
+    const earned = ALL_BADGES.filter(b => unlockedByBackendOrXP(b));
+    if (!earned.length) {
+        document.getElementById("dashboardBadges").innerHTML = `<div class="status">No badges earned yet.</div>`;
+        return;
+    }
+    document.getElementById("dashboardBadges").innerHTML = earned.map(b => `
+        <div class="badge unlocked">
+            ${renderEmblemByXP(state.user ? state.user.xp : b.unlock)}
+            <div class="name">${b.name}</div>
+            <div class="xp">Unlocked at ${b.unlock} XP</div>
+        </div>
+    `).join("");
+}
+
+function shuffle(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const t = a[i];
+        a[i] = a[j];
+        a[j] = t;
+    }
+    return a;
+}
+
+function getMemoryDuration(diff) {
+    if (diff === "easy") return 80;
+    if (diff === "hard") return 30;
+    return 50;
+}
+
+function resetMemoryGame(markStarted) {
+    const base = ["API", "DOM", "SQL", "CSS", "HTTP", "PY"];
+    state.memory.cards = shuffle([...base, ...base]).map((label, idx) => ({ id: idx, label, revealed: false, matched: false }));
+    state.memory.first = null;
+    state.memory.lock = false;
+    state.memory.matched = 0;
+    state.memory.gameOver = false;
+    const selectedDiff = (document.getElementById("memoryDifficulty")?.value || "normal");
+    state.memory.difficulty = selectedDiff;
+    state.memory.timeLeft = getMemoryDuration(selectedDiff);
+    state.memory.started = !!markStarted;
+    if (state.memory.timerId) {
+        clearInterval(state.memory.timerId);
+        state.memory.timerId = null;
+    }
+
+    renderMemoryBoard();
+    updateMemoryTimerUI();
+    document.getElementById("memoryStatus").innerText = markStarted
+        ? `Go! ${selectedDiff.toUpperCase()} mode started.`
+        : "Press Start Challenge.";
+
+    if (markStarted) startMemoryTimer();
+}
+
+function renderMemoryBoard() {
+    document.getElementById("memoryBoard").innerHTML = state.memory.cards.map(card => `
+        <div class="memory-card ${card.revealed ? "revealed" : ""} ${card.matched ? "matched" : ""}" onclick="flipMemoryCard(${card.id})">
+            ${card.revealed || card.matched ? card.label : "?"}
+        </div>
+    `).join("");
+}
+
+function updateMemoryTimerUI() {
+    const timer = document.getElementById("memoryTimer");
+    if (!timer) return;
+    timer.innerText = `${state.memory.difficulty.toUpperCase()} | Time left: ${state.memory.timeLeft}s`;
+}
+
+function startMemoryTimer() {
+    updateMemoryTimerUI();
+    state.memory.timerId = setInterval(() => {
+        state.memory.timeLeft -= 1;
+        updateMemoryTimerUI();
+
+        if (state.memory.timeLeft > 0) return;
+
+        clearInterval(state.memory.timerId);
+        state.memory.timerId = null;
+        state.memory.gameOver = true;
+        state.memory.started = false;
+        state.memory.lock = true;
+        document.getElementById("memoryStatus").innerText = "Time up. Start again to retry.";
+    }, 1000);
+}
+
+async function awardMemoryXP() {
+    const key = `memory_xp_${state.user.id}`;
+    if (localStorage.getItem(key) === currentDateKey()) {
+        document.getElementById("memoryStatus").innerText = "Completed. XP already claimed today.";
+        return;
+    }
+    const res = await fetch(`${API}/profile/add-xp?amount=30`, { method: "POST", headers: authHeaders() });
+    if (!res.ok) {
+        document.getElementById("memoryStatus").innerText = "Completed, but XP claim failed.";
+        return;
+    }
+    const data = await res.json();
+    const maybeUser = data.user || data;
+    if (maybeUser && maybeUser.xp !== undefined) {
+        state.user = { ...state.user, ...maybeUser };
+        renderUserProfile();
+    }
+    localStorage.setItem(key, currentDateKey());
+    document.getElementById("memoryStatus").innerText = "Memory complete. +30 XP awarded.";
+    confetti({ particleCount: 120, spread: 95 });
+}
+
+function flipMemoryCard(cardId) {
+    const memory = state.memory;
+    if (!memory.started) {
+        document.getElementById("memoryStatus").innerText = "Press Start Challenge first.";
+        return;
+    }
+    if (memory.gameOver || memory.timeLeft <= 0) {
+        document.getElementById("memoryStatus").innerText = "Time is over. Start a new challenge.";
+        return;
+    }
+    if (memory.lock) return;
+
+    const card = memory.cards.find(c => c.id === cardId);
+    if (!card || card.matched || card.revealed) return;
+    card.revealed = true;
+
+    if (!memory.first) {
+        memory.first = card;
+        renderMemoryBoard();
+        return;
+    }
+
+    renderMemoryBoard();
+    if (memory.first.label === card.label) {
+        memory.first.matched = true;
+        card.matched = true;
+        memory.first = null;
+        memory.matched += 2;
+        if (memory.matched === memory.cards.length) {
+            if (memory.timerId) {
+                clearInterval(memory.timerId);
+                memory.timerId = null;
+            }
+            memory.started = false;
+            awardMemoryXP();
+        } else {
+            document.getElementById("memoryStatus").innerText = "Match found. Keep going.";
+        }
+        renderMemoryBoard();
+        return;
+    }
+
+    memory.lock = true;
+    const firstCard = memory.first;
+    memory.first = null;
+    setTimeout(() => {
+        firstCard.revealed = false;
+        card.revealed = false;
+        memory.lock = false;
+        renderMemoryBoard();
+    }, 550);
+}
+
+function logout() {
+    localStorage.removeItem("access_token");
+    window.location.href = "login.html";
+}
+
+function getActiveSectionId() {
+    const active = document.querySelector(".section.active");
+    return active ? active.id : "dashboard";
+}
+
+function toggleMascot(forceOpen) {
+    const panel = document.getElementById("mascotPanel");
+    if (!panel) return;
+    const open = typeof forceOpen === "boolean"
+        ? forceOpen
+        : !panel.classList.contains("show");
+    panel.classList.toggle("show", open);
+    if (open) mascotNextTip();
+}
+
+function mascotNextTip(sectionId) {
+    const id = sectionId || getActiveSectionId();
+    const tips = MASCOT_TIPS[id] || MASCOT_TIPS.dashboard;
+    const tip = tips[Math.floor(Math.random() * tips.length)];
+    const el = document.getElementById("mascotTipText");
+    if (el) el.innerText = tip;
+}
+
+function mascotGoTo(tabId) {
+    const btn = document.getElementById(`nav-${tabId}`);
+    if (btn) showSection(tabId, btn);
+}
+
+init();
+</script>
+</body>
+</html>
+

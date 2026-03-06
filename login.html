@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gamify Login</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700&family=Sora:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        :root {
+            --bg-1: #090f24;
+            --bg-2: #2b2267;
+            --panel: rgba(11, 16, 40, 0.82);
+            --border: rgba(255, 255, 255, 0.15);
+            --text: #eef2ff;
+            --muted: #b8c2ef;
+            --accent-1: #ffd36b;
+            --accent-2: #ff9050;
+            --ok: #55d38f;
+            --error: #ff7d8a;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: "Sora", sans-serif;
+            color: var(--text);
+            display: grid;
+            place-items: center;
+            background:
+                radial-gradient(circle at 10% 12%, rgba(98, 227, 255, 0.16), transparent 30%),
+                radial-gradient(circle at 88% 14%, rgba(255, 109, 124, 0.16), transparent 28%),
+                linear-gradient(145deg, var(--bg-1), var(--bg-2));
+            overflow: hidden;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: -50%;
+            background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+            background-size: 24px 24px;
+            animation: drift 28s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes drift {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(-120px, -100px); }
+        }
+
+        .shell {
+            width: min(980px, 92vw);
+            border-radius: 24px;
+            border: 1px solid var(--border);
+            background: var(--panel);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 20px 50px rgba(4, 8, 26, 0.45);
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            overflow: hidden;
+            position: relative;
+            z-index: 2;
+        }
+
+        .hero {
+            padding: 30px;
+            border-right: 1px solid var(--border);
+            background: linear-gradient(180deg, rgba(100, 112, 255, 0.18), rgba(95, 205, 255, 0.07));
+            display: grid;
+            grid-template-rows: auto 1fr;
+            gap: 16px;
+        }
+
+        .brand {
+            font-family: "Orbitron", sans-serif;
+            font-size: 2rem;
+            margin: 0;
+        }
+
+        .hero p {
+            color: var(--muted);
+            margin: 8px 0 0;
+        }
+
+        .mascot-wrap {
+            align-self: center;
+            justify-self: center;
+            text-align: center;
+            width: 100%;
+        }
+
+        .mascot {
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            background: radial-gradient(circle at 28% 28%, #8ff3ff, #7e5dff 72%);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            animation: float 3s ease-in-out infinite;
+            box-shadow: 0 0 30px rgba(127, 139, 255, 0.45);
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0); }
+        }
+
+        .mascot-talk {
+            margin: 14px auto 0;
+            max-width: 330px;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.08);
+            padding: 10px;
+            color: #dbe4ff;
+            min-height: 44px;
+            font-size: 0.9rem;
+        }
+
+        .panel {
+            padding: 30px;
+            position: relative;
+        }
+
+        .mode-switch {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 6px;
+            margin-bottom: 18px;
+        }
+
+        .mode-btn {
+            border: none;
+            border-radius: 8px;
+            padding: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            color: var(--text);
+            background: transparent;
+            transition: 0.2s;
+        }
+
+        .mode-btn.active {
+            background: linear-gradient(135deg, rgba(114, 124, 255, 0.8), rgba(164, 105, 255, 0.8));
+            box-shadow: 0 8px 18px rgba(111, 116, 255, 0.32);
+        }
+
+        .title {
+            margin: 0 0 12px;
+            font-family: "Orbitron", sans-serif;
+            font-size: 1.35rem;
+        }
+
+        form {
+            display: grid;
+            gap: 10px;
+        }
+
+        input {
+            width: 100%;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(0, 0, 0, 0.25);
+            color: white;
+            padding: 11px;
+            font-family: "Sora", sans-serif;
+            transition: 0.2s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #86cfff;
+            box-shadow: 0 0 0 3px rgba(134, 207, 255, 0.2);
+        }
+
+        .cta {
+            margin-top: 4px;
+            border: none;
+            border-radius: 10px;
+            padding: 11px;
+            font-size: 0.97rem;
+            font-weight: 700;
+            cursor: pointer;
+            background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+            color: #1d2348;
+            transition: 0.2s;
+        }
+
+        .cta:hover { transform: translateY(-2px); }
+
+        .status {
+            margin-top: 10px;
+            min-height: 22px;
+            color: var(--muted);
+            font-size: 0.9rem;
+        }
+
+        .status.ok { color: var(--ok); }
+        .status.error { color: var(--error); }
+
+        .hidden { display: none; }
+
+        .coin {
+            position: absolute;
+            font-size: 22px;
+            animation: flyUp 0.9s ease forwards;
+            pointer-events: none;
+        }
+
+        @keyframes flyUp {
+            from { opacity: 1; transform: translateY(0) scale(1); }
+            to { opacity: 0; transform: translateY(-120px) scale(1.3); }
+        }
+
+        @media (max-width: 860px) {
+            .shell { grid-template-columns: 1fr; }
+            .hero { border-right: 0; border-bottom: 1px solid var(--border); }
+        }
+    </style>
+</head>
+<body>
+<div class="shell" id="shell">
+    <section class="hero">
+        <div>
+            <h1 class="brand">Gamify</h1>
+            <p>Level up your learning with quizzes, streaks, badges, and real progress tracking.</p>
+        </div>
+        <div class="mascot-wrap">
+            <div class="mascot" id="mascot">AI</div>
+            <div class="mascot-talk" id="mascotTalk">Welcome back, challenger.</div>
+        </div>
+    </section>
+
+    <section class="panel">
+        <div class="mode-switch">
+            <button id="loginModeBtn" class="mode-btn active" type="button">Login</button>
+            <button id="signupModeBtn" class="mode-btn" type="button">Sign Up</button>
+        </div>
+
+        <h2 class="title" id="formTitle">Login To Continue</h2>
+
+        <form id="loginForm">
+            <input type="email" id="loginEmail" placeholder="Email" required>
+            <input type="password" id="loginPassword" placeholder="Password" required>
+            <button class="cta" type="submit">Enter Dashboard</button>
+        </form>
+
+        <form id="signupForm" class="hidden">
+            <input type="email" id="signupEmail" placeholder="Email" required>
+            <input type="text" id="signupPhone" placeholder="Phone (+91XXXXXXXXXX or 10 digits)" required>
+            <input type="password" id="signupPassword" placeholder="Password" required>
+            <input type="password" id="confirmPassword" placeholder="Confirm Password" required>
+            <button class="cta" type="submit">Create Account</button>
+        </form>
+
+        <div class="status" id="statusMessage"></div>
+    </section>
+</div>
+
+<script>
+(() => {
+    const API = "http://127.0.0.1:8000";
+
+    const shell = document.getElementById("shell");
+    const mascotTalk = document.getElementById("mascotTalk");
+    const formTitle = document.getElementById("formTitle");
+    const statusMessage = document.getElementById("statusMessage");
+
+    const loginModeBtn = document.getElementById("loginModeBtn");
+    const signupModeBtn = document.getElementById("signupModeBtn");
+    const loginForm = document.getElementById("loginForm");
+    const signupForm = document.getElementById("signupForm");
+
+    function setStatus(message, type) {
+        statusMessage.textContent = message;
+        statusMessage.classList.remove("ok", "error");
+        if (type) statusMessage.classList.add(type);
+    }
+
+    function say(message) {
+        mascotTalk.textContent = message;
+    }
+
+    function showCoins() {
+        for (let i = 0; i < 6; i += 1) {
+            const coin = document.createElement("div");
+            coin.className = "coin";
+            coin.textContent = "XP";
+            coin.style.left = `${Math.random() * 280 + 40}px`;
+            coin.style.top = `${Math.random() * 200 + 120}px`;
+            shell.appendChild(coin);
+            setTimeout(() => coin.remove(), 950);
+        }
+    }
+
+    function launchConfetti() {
+        if (typeof confetti === "function") {
+            confetti({ particleCount: 100, spread: 75, origin: { y: 0.65 } });
+        }
+    }
+
+    function switchMode(mode) {
+        const isLogin = mode === "login";
+        loginForm.classList.toggle("hidden", !isLogin);
+        signupForm.classList.toggle("hidden", isLogin);
+
+        loginModeBtn.classList.toggle("active", isLogin);
+        signupModeBtn.classList.toggle("active", !isLogin);
+
+        formTitle.textContent = isLogin ? "Login To Continue" : "Create Your Account";
+        say(isLogin ? "Welcome back, challenger." : "New hero? Let us start your streak.");
+        setStatus("");
+    }
+
+    function extractError(data) {
+        if (!data) return "Something went wrong.";
+        if (typeof data.detail === "string") return data.detail;
+        if (Array.isArray(data.detail) && data.detail[0] && data.detail[0].msg) return data.detail[0].msg;
+        return "Request failed.";
+    }
+
+    function validateSignup(email, phone, password, confirmPassword) {
+        if (!email || !phone || !password || !confirmPassword) return "All fields are required.";
+        if (password !== confirmPassword) return "Passwords do not match.";
+        const phoneRegex = /^(\+91)?[6-9]\d{9}$/;
+        if (!phoneRegex.test(phone)) return "Enter a valid Indian phone number.";
+        return null;
+    }
+
+    loginModeBtn.addEventListener("click", () => switchMode("login"));
+    signupModeBtn.addEventListener("click", () => switchMode("signup"));
+
+    document.querySelectorAll("input[type='password']").forEach(input => {
+        input.addEventListener("focus", () => say("Secrets safe. Keep typing."));
+        input.addEventListener("blur", () => say("Nice. You are doing well."));
+    });
+
+    signupForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const email = document.getElementById("signupEmail").value.trim();
+        const phone = document.getElementById("signupPhone").value.trim();
+        const password = document.getElementById("signupPassword").value;
+        const confirmPassword = document.getElementById("confirmPassword").value;
+
+        const error = validateSignup(email, phone, password, confirmPassword);
+        if (error) {
+            setStatus(error, "error");
+            say(error);
+            return;
+        }
+
+        const formattedPhone = phone.startsWith("+91") ? phone : `+91${phone}`;
+
+        try {
+            const res = await fetch(`${API}/auth/signup`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, phone: formattedPhone, password })
+            });
+            const data = await res.json();
+
+            if (!res.ok) {
+                const msg = extractError(data);
+                setStatus(msg, "error");
+                say(msg);
+                return;
+            }
+
+            setStatus("Signup successful. Switch to login.", "ok");
+            say("Account created. +100 vibe points.");
+            launchConfetti();
+            showCoins();
+            signupForm.reset();
+            setTimeout(() => switchMode("login"), 1000);
+        } catch {
+            setStatus("Server error during signup.", "error");
+            say("Server is busy. Try again.");
+        }
+    });
+
+    loginForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const email = document.getElementById("loginEmail").value.trim();
+        const password = document.getElementById("loginPassword").value;
+
+        try {
+            const formData = new URLSearchParams();
+            formData.append("username", email);
+            formData.append("password", password);
+
+            const res = await fetch(`${API}/auth/login`, {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: formData
+            });
+            const data = await res.json();
+
+            if (!res.ok) {
+                setStatus("Invalid credentials.", "error");
+                say("That combo did not work. Try again.");
+                return;
+            }
+
+            localStorage.setItem("access_token", data.access_token);
+            await fetch(`${API}/auth/daily-login`, {
+                method: "POST",
+                headers: { Authorization: `Bearer ${data.access_token}` }
+            });
+
+            setStatus("Login successful. Redirecting...", "ok");
+            say("Welcome back. Let us level up.");
+            launchConfetti();
+
+            setTimeout(() => {
+                window.location.href = "dashboard.html";
+            }, 900);
+        } catch {
+            setStatus("Login failed. Try again.", "error");
+            say("Network issue. One more try.");
+        }
+    });
+})();
+</script>
+</body>
+</html>
